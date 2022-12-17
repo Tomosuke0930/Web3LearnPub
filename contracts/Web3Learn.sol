@@ -16,6 +16,22 @@ Buy
 contract Web3Learn is ReentrancyGuard {
 
     using SafeERC20 for IERC20; 
+    
+    // sender == msg.sender, amount == transferred amount, token == tokenAddress success: true == 1, false == 0
+    event Buy(
+        address indexed sender,  
+        address indexed token, 
+        uint indexed amount, 
+        bool success
+    );
+
+
+    event SetSplit(
+        address indexed sender,  
+        address indexed token, 
+        uint indexed amount
+    );
+
 
     /*********************************************************************************************
      ************************************   VARIABLES     ****************************************
@@ -94,16 +110,18 @@ contract Web3Learn is ReentrancyGuard {
         SafeERC20.safeTransfer(IERC20(token), msg.sender, amount);
     }
     
-    function buy(uint amount, address receivedToken, address sendingToken, Split[] memory splits) external nonReentrant {
-        if(!whitelist[sendingToken]) revert();
-        if(receivedToken != sendingToken) revert();
+    function buy(uint amount, address token, Split[] memory splits) external nonReentrant {
+        if(!whitelist[token]) revert();
         if(!_checkRatio(splits)) revert();
         address ADDRESS_THIS = address(this);
-        uint beforeBalance = IERC20(sendingToken).balanceOf(ADDRESS_THIS);
-        SafeERC20.safeTransferFrom(IERC20(sendingToken), msg.sender, ADDRESS_THIS, amount);
-        uint afterBalance = IERC20(sendingToken).balanceOf(ADDRESS_THIS);
+        uint beforeBalance = IERC20(token).balanceOf(ADDRESS_THIS);
+        SafeERC20.safeTransferFrom(IERC20(token), msg.sender, ADDRESS_THIS, amount);
+        uint afterBalance = IERC20(token).balanceOf(ADDRESS_THIS);
         uint actualBalance = afterBalance - beforeBalance;
-        setClaimableAmounts(sendingToken,actualBalance,splits);
+        setClaimableAmounts(token,actualBalance,splits);
+        emit Buy(msg.sender, token, amount, true);
+        // event -> 
+        // success, amount, msg.sender 
     }
 
     /*********************************************************************************************
@@ -118,6 +136,7 @@ contract Web3Learn is ReentrancyGuard {
             reward[splits[i].payee][token] += claimableAmount;
             totalAmounts += claimableAmount;
             unchecked { ++i;}
+            emit SetSplit(splits[i].payee, token, claimableAmount);
         }
 
         uint gap = amount - totalAmounts;
