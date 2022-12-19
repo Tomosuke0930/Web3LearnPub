@@ -16,7 +16,7 @@ Buy
 contract Web3Learn is ReentrancyGuard {
 
     using SafeERC20 for IERC20; 
-    
+    address constant L3DTOKEN_ADDRESS = 0x35d831F79e54f6b7ABD3D324822DE9084f00E27B;
     // sender == msg.sender, amount == transferred amount, token == tokenAddress success: true == 1, false == 0
     event Buy(
         address indexed sender,  
@@ -112,6 +112,7 @@ contract Web3Learn is ReentrancyGuard {
     
     function buy(uint amount, address token, Split[] memory splits) external nonReentrant {
         if(!whitelist[token]) revert();
+        require(token == L3DTOKEN_ADDRESS,"Invalid Token");
         if(!_checkRatio(splits)) revert();
         address ADDRESS_THIS = address(this);
         uint beforeBalance = IERC20(token).balanceOf(ADDRESS_THIS);
