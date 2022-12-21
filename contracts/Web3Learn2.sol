@@ -4,19 +4,13 @@ pragma solidity =0.8.17;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-/**
-Buy
- 教材を購入する際の関数
- JPYCもしくはUSDC が送られているのかを確認
- 購入した瞬間に、UserはClaimできるようにMappingの値が追加される
-
- */
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 // 一旦, ETHは入れない
 contract Web3Learn is ReentrancyGuard {
 
     using SafeERC20 for IERC20; 
-    address constant L3DTOKEN_ADDRESS = 0x35d831F79e54f6b7ABD3D324822DE9084f00E27B;
+    address constant DEMO_ADDRESS = 0x6EE96FA35b26d3F8Cd249A4cba6617D8189BfB5d;
     // sender == msg.sender, amount == transferred amount, token == tokenAddress success: true == 1, false == 0
     event Buy(
         address indexed sender,  
@@ -100,13 +94,16 @@ contract Web3Learn is ReentrancyGuard {
         }
         isValid_ = (totalRatio == TOTAL_RATIO);
     }
-    
-    function getBuyList(address user) public view returns(uint256[] memory buyLists_) {
+
+    ///こっちがOK
+
+   function getBuyLists(address user) public view returns (uint256[] memory){
         uint length = buyList[user].length;
-        for(uint i; i < length;) {
-            buyLists_[i] = buyList[user][i];
-            unchecked {++i;}
+        uint256[] memory ret = new uint256[](length);
+        for (uint i = 0; i < length; i++) {
+            ret[i] = buyList[user][i];
         }
+        return ret;
     }
 
     /*********************************************************************************************
@@ -121,18 +118,25 @@ contract Web3Learn is ReentrancyGuard {
     
     function buy(uint amount, uint256 id, address token, Split[] memory splits) external nonReentrant {
         // if(!whitelist[token]) revert();
-        require(token == L3DTOKEN_ADDRESS,"Invalid Token");
+        require(token == DEMO_ADDRESS,"Invalid Token");
+
         if(!_checkRatio(splits)) revert();
+
         address ADDRESS_THIS = address(this);
+
         uint beforeBalance = IERC20(token).balanceOf(ADDRESS_THIS);
-        SafeERC20.safeTransferFrom(IERC20(token), msg.sender, ADDRESS_THIS, amount);
+        IERC20(token).safeTransferFrom(msg.sender,ADDRESS_THIS,amount);
+
         uint afterBalance = IERC20(token).balanceOf(ADDRESS_THIS);
+    
+
         uint actualBalance = afterBalance - beforeBalance;
+
         setClaimableAmounts(token,actualBalance,splits);
+
         buyList[msg.sender].push(id); // add
+
         emit Buy(msg.sender, token, amount, true);
-        // event -> 
-        // success, amount, msg.sender 
     }
 
     /*********************************************************************************************
@@ -140,17 +144,23 @@ contract Web3Learn is ReentrancyGuard {
      *********************************************************************************************/
 
     function setClaimableAmounts(address token, uint256 amount, Split[] memory splits) private {
+
         uint length = splits.length;
         uint totalAmounts;
+
         for(uint i; i < length;) {
+
+
             uint claimableAmount = amount * splits[i].ratio / 10000;
             reward[splits[i].payee][token] += claimableAmount;
             totalAmounts += claimableAmount;
-            unchecked { ++i;}
+
             emit SetSplit(splits[i].payee, token, claimableAmount);
+            unchecked { ++i;}
         }
 
         uint gap = amount - totalAmounts;
         if(gap != 0) reward[msg.sender][token] += gap;
     }
 }
+

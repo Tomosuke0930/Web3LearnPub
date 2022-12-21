@@ -13,13 +13,20 @@ contract SoulBoundTest is ERC721, ERC721URIStorage, Ownable {
  
     constructor() ERC721("SoulBoundTest", "SBT") {}
  
-    function safeMint(address to, string memory uri) public onlyOwner {
+    function safeMint(address to, string memory uri) public {
+        // msg.senderを制限しなければいけない
+        //どんなやつにしたらいいのかな？
         uint256 tokenId = _tokenIdCounter.current();
         _tokenIdCounter.increment();
         _safeMint(to, tokenId);
         _setTokenURI(tokenId, uri);
     }
- 
+    // 後ほど必要
+    function _checkBeforeMint() internal view returns(bool _isValid) {
+        // その人が終わったのかどうか？を確認する必要がある　
+        // 作成者がapproveする必要がある！
+        // msg.senderを確認する必要がある！
+    }
     // The following functions are overrides required by Solidity.
  
     function _burn(uint256 tokenId) internal override(ERC721, ERC721URIStorage) {

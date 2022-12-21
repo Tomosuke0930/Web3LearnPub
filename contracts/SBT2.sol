@@ -72,6 +72,10 @@ contract ERC721 is IERC721 {
     // Mapping from token ID to approved address
     mapping(uint => address) internal _approvals;
 
+    // @junya
+    // isMint
+    mapping(address => mapping(uint256 => bool)) public isMint;
+
     // Mapping from owner to operator approvals
     mapping(address => mapping(address => bool)) public isApprovedForAll;
 
@@ -149,8 +153,10 @@ contract ERC721 is IERC721 {
     function _getNFT(address user) public view returns(NFT[] memory nfts_) {
         nfts_ = _ownerOf[user];
     }
-    function _mint(address to,string memory _title,string memory _url) internal {
+    function _mint(uint256 id, address to,string memory _title,string memory _url) internal {
+        require(id < 3,"ID == only 0,1,2 ");
         require(to != address(0), "mint to zero address");
+        if(isMint[msg.sender][id] == true) revert("Already Minted");
         NFT memory nft = NFT(
             {
                 title:  _title,
@@ -161,21 +167,35 @@ contract ERC721 is IERC721 {
 
         _balanceOf[to]++;
         _ownerOf[to].push(nft);
+        isMint[msg.sender][id] = true;
 
         emit Transfer(address(0), to, nft);
     }
 
+    // @junya
+    // isMintを確認する
+    function checkIsMinted(address user) public view returns(bool[] memory) {
+        bool[] memory ret = new bool[](3);
+        for(uint i; i < 3; i++) {
+            ret[i] = isMint[user][i];
+        }
+        return ret;
+    }
     function _burn(uint id) internal {}
 }
 
 contract Web3LearnNFT is ERC721 {
 
 
-    function mint(address to,string memory _title,string memory _url) external {
-        _mint(to,_title,_url);
+    function mint(uint256 id,address to,string memory _title,string memory _url) external {
+        _mint(id, to,_title,_url);
     }
 
     function getNFT(address user) external view returns(NFT[] memory nfts) {
         nfts = _getNFT(user);
+    }
+
+    function getIsMint(address user) external view returns(bool[] memory isMints)  {
+        isMints = checkIsMinted(user);
     }
 }
