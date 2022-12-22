@@ -110,7 +110,7 @@ contract Web3Learn is ReentrancyGuard {
      *********************************   PUBLIC FUNCTIONS     ************************************
      *********************************************************************************************/
 
-    function claimReard(address token, uint amount) public nonReentrant {
+    function claimReward(address token, uint amount) public nonReentrant {
         if(amount > _getReward(msg.sender, token)) revert();
         reward[msg.sender][token] -= amount;
         SafeERC20.safeTransfer(IERC20(token), msg.sender, amount);
