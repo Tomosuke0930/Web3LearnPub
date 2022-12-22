@@ -59,6 +59,7 @@ contract ERC721 is IERC721 {
         bool approved
     );
     struct NFT {
+        uint256 id;
         string title; // NFTのTitle
         string url;   // NFTのURL
     }
@@ -153,12 +154,13 @@ contract ERC721 is IERC721 {
     function _getNFT(address user) public view returns(NFT[] memory nfts_) {
         nfts_ = _ownerOf[user];
     }
-    function _mint(uint256 id, address to,string memory _title,string memory _url) internal {
-        require(id < 3,"ID == only 0,1,2 ");
+    function _mint(uint256 _id, address to,string memory _title,string memory _url) internal {
+        require(_id < 3,"ID == only 0,1,2 ");
         require(to != address(0), "mint to zero address");
-        if(isMint[msg.sender][id] == true) revert("Already Minted");
+        if(isMint[msg.sender][_id] == true) revert("Already Minted");
         NFT memory nft = NFT(
             {
+                id: _id,
                 title:  _title,
                 url:    _url
             }
@@ -167,7 +169,7 @@ contract ERC721 is IERC721 {
 
         _balanceOf[to]++;
         _ownerOf[to].push(nft);
-        isMint[msg.sender][id] = true;
+        isMint[msg.sender][_id] = true;
 
         emit Transfer(address(0), to, nft);
     }
